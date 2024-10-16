@@ -86,11 +86,17 @@ const SchoolForm: React.FC = () => {
       setModalOpen(true);
       resetForm();
       dispatch(resetFormAction());
+      goToFirstStep(); 
     }
   };
+  
 
   const maxSteps = steps.length - 1;
   const progressPercent = (currentStep / maxSteps) * 100;
+
+  const goToFirstStep = () => {
+    setCurrentStep(0); 
+  };
 
   return (
     <>
@@ -413,10 +419,9 @@ const SchoolForm: React.FC = () => {
     }}
   >
     {currentStep === maxSteps ? 'Submit' : 'Next'}
-  </Button>
-</Flex>
-
-              </Form>
+            </Button>
+            </Flex>
+            </Form>
             )}
           </Formik>
         </Box>
@@ -426,12 +431,16 @@ const SchoolForm: React.FC = () => {
         <ModalOverlay />
         <ModalContent>
           <ModalCloseButton />
-          <ModalBody textAlign="center" py={10}>
-            Form submitted successfully!
+          <ModalBody>
+            <Box color="black">Form Submitted Successfully.</Box>
           </ModalBody>
-          <ModalFooter justifyContent="center">
-            <Button colorScheme="blue" onClick={() => setModalOpen(false)}>
-              OK
+          <ModalFooter>
+            <Button colorScheme="blue" onClick={() => {
+              setModalOpen(false);
+              dispatch(resetFormAction()); 
+              goToFirstStep();  
+            }}>
+              Close
             </Button>
           </ModalFooter>
         </ModalContent>
