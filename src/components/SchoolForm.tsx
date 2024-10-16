@@ -16,72 +16,71 @@ import {
   InputGroup,
   Stack,
   InputLeftAddon,
-  Select
+  Select,
+  Stepper,
+  Step,
+  StepIndicator,
+  StepStatus,
+  StepIcon,
+  Progress,
+  StepNumber,
+  StepDescription,
 } from '@chakra-ui/react';
 import { Formik, Form, Field } from 'formik';
 import * as Yup from 'yup';
 import { useDispatch } from 'react-redux';
 import { updateDocuments, resetForm as resetFormAction } from '../store/formslice';
 
-// Validation schema for each step
 const validationSchemas = [
-  // Step 1: Personal Information
   Yup.object({
     firstName: Yup.string().required('First name is required'),
     lastName: Yup.string().required('Last name is required'),
     gender: Yup.string().required('Gender is required'),
     email: Yup.string().email('Invalid email').required('Email is required'),
-    contactNumber: Yup.string().required('Contact number is required'),
+    contactNumber: Yup.string()
+    .length(11, 'Invalid number')
+    .required('Contact number is required'),
   }),
-  
-  // Step 2: Academic Details
   Yup.object({
     courseOfStudy: Yup.string().required('Course of study is required'),
     enrollmentYear: Yup.string().required('Enrollment year is required'),
-    studentID: Yup.string()
-      .length(9, 'Invalid Student ID')
-      .matches(/^\d{9}$/, 'Invalid Student ID')
-      .required('Student ID is required'),
-    gpa: Yup.number()
-      .typeError('Invalid GPA')
-      .required('GPA is required')
-      .min(0, 'Invalid GPA')
-      .max(5, 'Invalid GPA'),
+    studentID: Yup.string().length(9, 'Invalid Student ID').matches(/^\d{9}$/, 'Invalid Student ID').required('Student ID is required'),
+    gpa: Yup.number().typeError('Invalid GPA').required('GPA is required').min(0, 'Invalid GPA').max(5, 'Invalid GPA'),
     academicAdvisor: Yup.string().required('Academic advisor name is required'),
   }),
-  
-  // Step 3: Emergency Contact
   Yup.object({
     contactPerson: Yup.string().required('Contact person is required'),
     relationship: Yup.string().required('Relationship is required'),
-    emergencyNumber: Yup.string().required('Emergency number is required'),
+    emergencyNumber: Yup.string()
+    .length(11, 'Invalid number')
+    .required('Emergency number is required'),
     address: Yup.string().required('Address is required'),
     contactMethod: Yup.string().required('Contact method is required'),
   }),
-  
-  // Step 4: Document Upload
   Yup.object({
-    profilePicture: Yup.mixed()
-      .test('fileRequired', 'Profile picture is required', value => value instanceof File),
-    idCard: Yup.mixed()
-      .test('fileRequired', 'ID card is required', value => value instanceof File),
-    transcript: Yup.mixed()
-      .test('fileRequired', 'Transcript is required', value => value instanceof File),
+    profilePicture: Yup.mixed().test('fileRequired', 'Profile picture is required', value => value instanceof File),
+    idCard: Yup.mixed().test('fileRequired', 'ID card is required', value => value instanceof File),
+    transcript: Yup.mixed().test('fileRequired', 'Transcript is required', value => value instanceof File),
     password: Yup.string().required('Password is required'),
-    confirmPassword: Yup.string()
-      .oneOf([Yup.ref('password')], 'Passwords must match')
-      .required('Confirm Password is required'),
+    confirmPassword: Yup.string().oneOf([Yup.ref('password')], 'Passwords must match').required('Confirm Password is required'),
   }),
 ];
 
-const MultiStepForm: React.FC = () => {
+const steps = [
+  { title: 'Step 1', description: 'Personal Information' },
+  { title: 'Step 2', description: 'Academic Details' },
+  { title: 'Step 3', description: 'Emergency Contact' },
+  { title: 'Step 4', description: 'Documents' },
+];
+
+const SchoolForm: React.FC = () => {
   const dispatch = useDispatch();
   const [isModalOpen, setModalOpen] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
 
   const handleSubmit = (values: any, resetForm: () => void) => {
     if (currentStep < validationSchemas.length - 1) {
-      setCurrentStep((prev) => prev + 1); 
+      setCurrentStep((prev) => prev + 1);
     } else {
       dispatch(updateDocuments(values));
       setModalOpen(true);
@@ -90,45 +89,91 @@ const MultiStepForm: React.FC = () => {
     }
   };
 
+  const maxSteps = steps.length - 1;
+  const progressPercent = (currentStep / maxSteps) * 100;
+
   return (
     <>
-      <Flex justify="center" align="center" minHeight="100px">
-        <Box p={6} maxW="500px" width="430px" mx="auto" mt={10}>
-          <Heading as="h2" size="md" textAlign="center" mb={4} color="#0047AB">
-            Multi-Step Form
+      <Flex justify="center" align="center" minHeight="100px" ml="420px" mt="40px" mb="40px" boxShadow='md'>
+        <Box p={6} maxW="500px" width="500px" mx="auto" mt={10}>
+          <Heading as="h3" size="xl" textAlign="center" mb={4} color="#0047AB">
+            School Form
           </Heading>
+
+          {/* Stepper */}
+          <Box position="relative" mb={4}>
+  <Stepper size="sm" index={currentStep} colorScheme="blue" gap="0">
+    {steps.map((step, index) => (
+      <React.Fragment key={index}>
+        <Step
+          flexDirection="column"
+          alignItems="center"
+          height="80px"
+          gap={2}
+        >
+          <StepIndicator>
+            <StepStatus
+              complete={<StepIcon />}
+              incomplete={<StepNumber />}
+              active={<StepNumber />}
+            />
+          </StepIndicator>
+          <Box flexShrink="0" textAlign="center">
+            <StepDescription fontSize="xs">
+              {step.description}
+            </StepDescription>
+          </Box>
+        </Step>
+        {index < steps.length - 1 && (
+          <Box width="40px" height="2px" bg="gray.500" alignSelf="center" />
+        )}
+      </React.Fragment>
+    ))}
+  </Stepper>
+  <Progress
+    value={progressPercent}
+    position="absolute"
+    height="3px"
+    width="full"
+    top="12px"
+    zIndex={-1}
+    colorScheme="blue"
+  />
+</Box>
+
           <Formik
             initialValues={{
               firstName: '',
               lastName: '',
-              gender: '',             
+              gender: '',
               email: '',
-              contactNumber: '',      
-              courseOfStudy: '',      
-              enrollmentYear: '',     
-              studentID: '',          
-              gpa: '',                
-              academicAdvisor: '',    
-              contactPerson: '',     // Added missing fields here
-              relationship: '',      // Added missing fields here
-              emergencyNumber: '',   // Added missing fields here
-              address: '',           // Added missing fields here
-              contactMethod: '',     // Added missing fields here
+              contactNumber: '',
+              courseOfStudy: '',
+              enrollmentYear: '',
+              studentID: '',
+              gpa: '',
+              academicAdvisor: '',
+              contactPerson: '',
+              relationship: '',
+              emergencyNumber: '',
+              address: '',
+              contactMethod: '',
               profilePicture: null,
               idCard: null,
               transcript: null,
-              password: '',          
-              confirmPassword: '',   
+              password: '',
+              confirmPassword: '',
             }}
             validationSchema={validationSchemas[currentStep]}
+            validateOnChange={true} // Disable validation on change
+            validateOnBlur={false}   // Disable validation on blur
             onSubmit={(values, { resetForm }) => handleSubmit(values, resetForm)}
           >
             {({ setFieldValue, errors, touched }) => (
               <Form>
-                {/* Step 1: Personal Information */}
                 {currentStep === 0 && (
                   <>
-                    <FormControl isInvalid={touched.firstName && !!errors.firstName}>
+                     <FormControl isInvalid={touched.firstName && !!errors.firstName}>
                       <FormLabel color="#0047AB">First Name</FormLabel>
                       <Field name="firstName" as={Input} placeholder="John" />
                       <Box color="red">{touched.firstName && errors.firstName}</Box>
@@ -169,48 +214,65 @@ const MultiStepForm: React.FC = () => {
                   </>
                 )}
 
-                {/* Step 2: Academic Details */}
                 {currentStep === 1 && (
                   <>
                     <FormControl isInvalid={touched.courseOfStudy && !!errors.courseOfStudy}>
-                      <FormLabel color="#0047AB">Course of Study</FormLabel>
-                      <Field name="courseOfStudy" as={Select}>
-                        <option value="">Select Course of Study</option>
-                        <option value="Computer Science">Computer Science</option>
-                        <option value="Information Technology">Information Technology</option>
-                        <option value="Software Engineering">Software Engineering</option>
-                        <option value="Business Administration">Business Administration</option>
-                      </Field>
-                      <Box color="red">{touched.courseOfStudy && errors.courseOfStudy}</Box>
-                    </FormControl>
+                <FormLabel color="#0047AB">Course of Study</FormLabel>
+                <Field name="courseOfStudy" as={Select} >
+                  <option style={{ color: '#0047AB' }} value="">Select Course of Study</option>
+                  <option style={{ color: '#0047AB' }} value="Computer Science">Computer Science</option>
+                  <option style={{ color: '#0047AB' }} value="Information Technology">Information Technology</option>
+                  <option style={{ color: '#0047AB' }} value="Software Engineering">Software Engineering</option>
+                  <option style={{ color: '#0047AB' }} value="Business Administration">Business Administration</option>
+                </Field>
+                <Box color="red">{touched.courseOfStudy && errors.courseOfStudy}</Box>
+              </FormControl>
 
-                    <FormControl isInvalid={touched.enrollmentYear && !!errors.enrollmentYear}>
-                      <FormLabel color="#0047AB">Enrollment Year</FormLabel>
-                      <Field name="enrollmentYear" as={Input} placeholder="2023" />
-                      <Box color="red">{touched.enrollmentYear && errors.enrollmentYear}</Box>
-                    </FormControl>
+              <FormControl isInvalid={touched.enrollmentYear && !!errors.enrollmentYear}>
+                <FormLabel color="#0047AB">Enrollment Year</FormLabel>
+                <Field name="enrollmentYear" as={Input} placeholder="2023"  />
+                <Box color="red">{touched.enrollmentYear && errors.enrollmentYear}</Box>
+              </FormControl>
 
-                    <FormControl isInvalid={touched.studentID && !!errors.studentID}>
-                      <FormLabel color="#0047AB">Student ID</FormLabel>
-                      <Field name="studentID" as={Input} type="text" placeholder="123456789" />
-                      <Box color="red">{touched.studentID && errors.studentID}</Box>
-                    </FormControl>
+              <FormControl isInvalid={touched.studentID && !!errors.studentID}>
+  <FormLabel color="#0047AB">Student ID</FormLabel>
+  <Field
+    name="studentID"
+    as={Input}
+    type="text" 
+    placeholder="123456789"
+    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+      const value = e.target.value;
+      setFieldValue("studentID", value); 
+    }}
+  />
+  <Box color="red">{touched.studentID && errors.studentID}</Box>
+</FormControl>
 
-                    <FormControl isInvalid={touched.gpa && !!errors.gpa}>
-                      <FormLabel color="#0047AB">GPA</FormLabel>
-                      <Field name="gpa" as={Input} type="number" step="0.01" placeholder="4.00" />
-                      <Box color="red">{touched.gpa && errors.gpa}</Box>
-                    </FormControl>
+              <FormControl isInvalid={touched.gpa && !!errors.gpa}>
+                <FormLabel color="#0047AB">GPA</FormLabel>
+                <Field
+                  name="gpa"
+                  as={Input}
+                  type="number"
+                  placeholder="4.5"
+                  _placeholder={{ color: '#0047AB' }}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                    const value = e.target.value === '' ? '' : parseFloat(e.target.value);
+                    setFieldValue("gpa", value);
+                  }}
+                />
+                <Box color="red">{touched.gpa && errors.gpa}</Box>
+              </FormControl>
 
-                    <FormControl isInvalid={touched.academicAdvisor && !!errors.academicAdvisor}>
-                      <FormLabel color="#0047AB">Academic Advisor</FormLabel>
-                      <Field name="academicAdvisor" as={Input} placeholder="Dr. Jane Doe" />
-                      <Box color="red">{touched.academicAdvisor && errors.academicAdvisor}</Box>
-                    </FormControl>
+              <FormControl isInvalid={touched.academicAdvisor && !!errors.academicAdvisor}>
+                <FormLabel color="#0047AB">Academic Advisor Name</FormLabel>
+                <Field name="academicAdvisor" as={Input} placeholder="Dr John Smith" _placeholder={{ color: '#0047AB' }} />
+                <Box color="red">{touched.academicAdvisor && errors.academicAdvisor}</Box>
+              </FormControl>
                   </>
                 )}
 
-                {/* Step 3: Emergency Contact */}
                 {currentStep === 2 && (
                   <>
                     <FormControl isInvalid={touched.contactPerson && !!errors.contactPerson}>
@@ -255,10 +317,8 @@ const MultiStepForm: React.FC = () => {
                   </>
                 )}
 
-                {/* Step 4: Document Upload */}
                 {currentStep === 3 && (
                   <>
-                    {/* Profile Picture Upload */}
 <FormControl isInvalid={touched.profilePicture && !!errors.profilePicture}>
   <FormLabel color="#0047AB">Profile Picture</FormLabel>
   <Input
@@ -274,7 +334,6 @@ const MultiStepForm: React.FC = () => {
   <Box color="red">{touched.profilePicture && errors.profilePicture}</Box>
 </FormControl>
 
-{/* ID Card Upload */}
 <FormControl isInvalid={touched.idCard && !!errors.idCard}>
   <FormLabel color="#0047AB">ID Card</FormLabel>
   <Input
@@ -290,7 +349,6 @@ const MultiStepForm: React.FC = () => {
   <Box color="red">{touched.idCard && errors.idCard}</Box>
 </FormControl>
 
-{/* Transcript Upload */}
 <FormControl isInvalid={touched.transcript && !!errors.transcript}>
   <FormLabel color="#0047AB">Transcript</FormLabel>
   <Input
@@ -320,23 +378,49 @@ const MultiStepForm: React.FC = () => {
                   </>
                 )}
 
-                {/* Navigation Buttons */}
-                <Flex justify="space-between" mt={4}>
-                  {currentStep > 0 && (
-                    <Button colorScheme="gray" onClick={() => setCurrentStep((prev) => prev - 1)}>
-                      Previous
-                    </Button>
-                  )}
-                  <Button colorScheme="blue" type="submit">
-                    {currentStep === validationSchemas.length - 1 ? 'Submit' : 'Next'}
-                  </Button>
-                </Flex>
+                {/* Buttons */}
+                <Flex mt={6} justify="space-between">
+  {currentStep > 0 && (
+    <Button
+      mt={6}
+      color="white"
+      bg="#0047AB"
+      size="lg"
+      width="150px"
+      height="50px"
+      border="none"
+      sx={{
+        _hover: { bg: '#0047AB' },
+      }}
+      onClick={() => setCurrentStep((prev) => prev - 1)}
+    >
+      Previous
+    </Button>
+  )}
+
+  <Button
+    type="submit" 
+    background="#0047AB"
+    mt={6}
+    color="white"
+    bg="#0047AB"
+    size="lg"
+    width="150px"
+    height="50px"
+    border="none"
+    sx={{
+      _hover: { bg: '#0047AB' },
+    }}
+  >
+    {currentStep === maxSteps ? 'Submit' : 'Next'}
+  </Button>
+</Flex>
+
               </Form>
             )}
           </Formik>
         </Box>
       </Flex>
-
       {/* Modal */}
       <Modal isOpen={isModalOpen} onClose={() => setModalOpen(false)} size="sm">
         <ModalOverlay />
@@ -356,4 +440,4 @@ const MultiStepForm: React.FC = () => {
   );
 };
 
-export default MultiStepForm;
+export default SchoolForm;

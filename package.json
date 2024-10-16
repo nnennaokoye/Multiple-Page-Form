@@ -17,7 +17,7 @@
     "@reduxjs/toolkit": "^2.2.8",
     "formik": "^2.4.6",
     "formik-persist": "^1.1.0",
-    "framer-motion": "^11.11.8",
+    "framer-motion": "^11.11.9",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-redux": "^9.1.2",
